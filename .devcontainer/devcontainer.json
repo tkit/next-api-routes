@@ -1,0 +1,20 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.205.1/containers/docker-existing-dockerfile
+{
+  "name": "Existing Dockerfile",
+  "context": "..",
+  "dockerFile": "Dockerfile",
+  "settings": {},
+  "extensions": [
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "oderwat.indent-rainbow",
+    "redhat.vscode-yaml"
+  ],
+  // "postCreateCommand": "bash -x .devcontainer/postCreateCommand.sh",
+  // "runArgs": ["--env-file", ".devcontainer/devcontainer.env"],
+  "mounts": [
+    "source=next-api-routes_node_modules,target=${containerWorkspaceFolder}/node_modules,type=volume",
+    "source=next-api-routes_server-extensions,target=/root/.vscode-server/extensions,type=volume"
+  ]
+}
