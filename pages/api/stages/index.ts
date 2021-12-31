@@ -1,15 +1,34 @@
-import { NextApiRequest, NextApiResponse } from 'next'
-import { Stage } from '../../../interfaces'
-import fs from 'fs'
-import path from 'path'
+import Cors from 'cors'
 import { parse } from 'csv-parse/sync'
+import fs from 'fs'
+import { NextApiRequest, NextApiResponse } from 'next'
+import path from 'path'
+import { Stage } from '../../../interfaces'
+import { initMiddleware } from '../../../lib/initMiddleware'
 
-const handler = (_req: NextApiRequest, res: NextApiResponse) => {
+const cors = initMiddleware(
+  Cors({
+    methods: ['GET'],
+  })
+)
+
+const initializeStages = (): Stage[] => {
   const data: Buffer = fs.readFileSync(
     path.join(process.cwd(), 'data', 'Stage.csv')
   )
-  const stages: Stage[] = parse(data, { columns: true, skipEmptyLines: true })
+  return parse(data, {
+    columns: true,
+    skipEmptyLines: true,
+    on_record: (record, { lines }) => {
+      return { ID: lines, name: record.name, image: record.image }
+    },
+  })
+}
 
+const stages = initializeStages()
+
+export const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  await cors(req, res)
   try {
     if (!Array.isArray(stages)) {
       throw new Error('Cannot find stage data')
