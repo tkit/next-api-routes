@@ -32,8 +32,7 @@ export type Stage = {
   image: `/images/stage/${string}.png`
 }
 
-export type Skill = {
-  ID: number
-  name: string
-  image: `/images/skill/${string}.png`
+export type WeaponDetail = Omit<Weapon, 'special' | 'sub'> & {
+  special: Special
+  sub: SubWeapon
 }

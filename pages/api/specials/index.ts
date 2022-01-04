@@ -1,18 +1,19 @@
+import Cors from 'cors'
 import { NextApiRequest, NextApiResponse } from 'next'
-import { Special } from '../../../interfaces'
-import fs from 'fs'
-import path from 'path'
-import { parse } from 'csv-parse/sync'
+import { initMiddleware } from '../../../lib/initMiddleware'
+import { initializeSpecials } from '../../../utils/data'
 
-const handler = (_req: NextApiRequest, res: NextApiResponse) => {
-  const data: Buffer = fs.readFileSync(
-    path.join(process.cwd(), 'data', 'Special.csv')
-  )
-  const specials: Special[] = parse(data, {
-    columns: true,
-    skipEmptyLines: true,
+const cors = initMiddleware(
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  Cors({
+    methods: ['GET'],
   })
+)
 
+const specials = initializeSpecials()
+
+export const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  await cors(req, res)
   try {
     if (!Array.isArray(specials)) {
       throw new Error('Cannot find special data')
@@ -20,7 +21,9 @@ const handler = (_req: NextApiRequest, res: NextApiResponse) => {
 
     res.status(200).json(specials)
   } catch (err) {
-    res.status(500).json({ statusCode: 500, message: err.message })
+    if (err instanceof Error) {
+      res.status(500).json({ statusCode: 500, message: err.message })
+    }
   }
 }
 

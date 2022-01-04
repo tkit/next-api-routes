@@ -1,29 +1,14 @@
 import Cors from 'cors'
-import { parse } from 'csv-parse/sync'
-import fs from 'fs'
 import { NextApiRequest, NextApiResponse } from 'next'
-import path from 'path'
-import { Stage } from '../../../interfaces'
 import { initMiddleware } from '../../../lib/initMiddleware'
+import { initializeStages } from '../../../utils/data'
 
 const cors = initMiddleware(
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   Cors({
     methods: ['GET'],
   })
 )
-
-const initializeStages = (): Stage[] => {
-  const data: Buffer = fs.readFileSync(
-    path.join(process.cwd(), 'data', 'Stage.csv')
-  )
-  return parse(data, {
-    columns: true,
-    skipEmptyLines: true,
-    on_record: (record, { lines }) => {
-      return { ID: lines, name: record.name, image: record.image }
-    },
-  })
-}
 
 const stages = initializeStages()
 
@@ -36,7 +21,9 @@ export const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     res.status(200).json(stages)
   } catch (err) {
-    res.status(500).json({ statusCode: 500, message: err.message })
+    if (err instanceof Error) {
+      res.status(500).json({ statusCode: 500, message: err.message })
+    }
   }
 }
 

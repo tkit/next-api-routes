@@ -1,23 +1,53 @@
+import Cors from 'cors'
 import { NextApiRequest, NextApiResponse } from 'next'
-import { Weapon } from '../../../interfaces'
-import fs from 'fs'
-import path from 'path'
-import { parse } from 'csv-parse/sync'
+import { Special, SubWeapon, Weapon, WeaponDetail } from '../../../interfaces'
+import { initMiddleware } from '../../../lib/initMiddleware'
+import {
+  initializeSpecials,
+  initializeSubWeapons,
+  initializeWeapons,
+} from '../../../utils/data'
 
-const handler = (_req: NextApiRequest, res: NextApiResponse) => {
-  const data: Buffer = fs.readFileSync(
-    path.join(process.cwd(), 'data', 'Weapon.csv')
-  )
-  const stages: Weapon[] = parse(data, { columns: true, skipEmptyLines: true })
+const cors = initMiddleware(
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  Cors({
+    methods: ['GET'],
+  })
+)
+
+const weapons: Weapon[] = initializeWeapons()
+const specials: Special[] = initializeSpecials()
+const subweapons: SubWeapon[] = initializeSubWeapons()
+
+export const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  await cors(req, res)
+
+  const getWeaponDetails = (): WeaponDetail[] => {
+    return weapons.map((record) => {
+      const specialId = parseInt(
+        record.special.match(/\<Special\>{(\d+)}/)[1],
+        10
+      )
+      const subId = parseInt(record.sub.match(/\<SubWeapon\>{(\d+)}/)[1], 10)
+
+      const wd: WeaponDetail = {
+        ...record,
+        special: specials[specialId],
+        sub: subweapons[subId],
+      }
+
+      return wd
+    })
+  }
+
+  const wd: WeaponDetail[] = getWeaponDetails()
 
   try {
-    if (!Array.isArray(stages)) {
-      throw new Error('Cannot find weapon data')
-    }
-
-    res.status(200).json(stages)
+    res.status(200).json(wd)
   } catch (err) {
-    res.status(500).json({ statusCode: 500, message: err.message })
+    if (err instanceof Error) {
+      res.status(500).json({ statusCode: 500, message: err.message })
+    }
   }
 }
 
